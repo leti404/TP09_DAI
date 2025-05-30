@@ -1,7 +1,7 @@
-import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
 import {
   SafeAreaView,
+  ScrollView,
   View,
   Text,
   TextInput,
@@ -11,19 +11,14 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
-
 import axios from "axios";
 
 const API_KEY = "7b62fa5d"; // Reemplaza con tu propia API key de OMDb
 
 const App = () => {
-  // tt0133093 / tt0317219
   const [imdbId, setImdbId] = useState("tt0317219");
   const [movieData, setMovieData] = useState(null);
   const [loading, setLoading] = useState(false);
-
-  // Funcion que simula esperar 'n' miilsegundos
-  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
   const fetchMovieData = async () => {
     if (!imdbId.trim()) {
@@ -35,20 +30,14 @@ const App = () => {
     setMovieData(null);
 
     try {
-      //http://www.omdbapi.com/?i=tt0317219&apikey=7b62fa5d
       const response = await axios.get(`http://www.omdbapi.com/`, {
         params: {
           i: imdbId,
           apikey: API_KEY,
         },
-        timeout: 5000, // 5 segundos
+        timeout: 5000,
       });
 
-      // Simular un delay artificial de 3 segundos (asi vemos el Loading)
-      await sleep(3000);
-
-      console.log("Status:", response.status);
-      // En response.data se encuentra la respuesta! 
       if (response.data.Response === "True") {
         setMovieData(response.data);
       } else {
@@ -58,15 +47,7 @@ const App = () => {
         );
       }
     } catch (error) {
-      console.log("Error: ", error);
-      if (error.code === "ECONNABORTED") {
-        Alert.alert(
-          "Timeout",
-          "La solicitud ha tardado demasiado en responder."
-        );
-      } else {
-        Alert.alert("Error", "Hubo un problema al consultar la APIs.");
-      }
+      Alert.alert("Error", "Hubo un problema al consultar la API.");
     } finally {
       setLoading(false);
     }
@@ -74,33 +55,44 @@ const App = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar/>
-      <Text style={styles.title}>Buscar Película por IMDb ID</Text>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <Text style={styles.title}>Buscar Película por IMDb ID</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Ej: tt0111161"
-        value={imdbId}
-        onChangeText={setImdbId}
-        autoCapitalize="none"
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Ej: tt0111161"
+          value={imdbId}
+          onChangeText={setImdbId}
+          autoCapitalize="none"
+        />
 
-      <TouchableOpacity style={styles.button} onPress={fetchMovieData}>
-        <Text style={styles.buttonText}>Buscar</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={fetchMovieData}>
+          <Text style={styles.buttonText}>Buscar</Text>
+        </TouchableOpacity>
 
-      {loading && <ActivityIndicator size="large" color="#0000ff" />}
+        {loading && <ActivityIndicator size="large" color="#0000ff" />}
 
-      {movieData && (
-        <View style={styles.result}>
-          <Image
-            source={{ uri: movieData.Poster }}
-            style={styles.poster}
-            resizeMode="contain"
-          />
-          <Text style={styles.movieTitle}>{movieData.Title}</Text>
-        </View>
-      )}
+        {movieData && (
+          <View style={styles.result}>
+            <Image
+              source={{ uri: movieData.Poster }}
+              style={styles.poster}
+              resizeMode="contain"
+            />
+            <Text style={styles.movieTitle}>{movieData.Title}</Text>
+            <Text style={styles.movieDetails}>Actores: {movieData.Actors}</Text>
+            <Text style={styles.movieDetails}>Director: {movieData.Director}</Text>
+            <Text style={styles.movieDetails}>Género: {movieData.Genre}</Text>
+            <Text style={styles.sectionTitle}>Calificaciones:</Text>
+            {movieData.Ratings &&
+              movieData.Ratings.map((rating, index) => (
+                <Text key={index} style={styles.ratingText}>
+                  {rating.Source}: {rating.Value}
+                </Text>
+              ))}
+          </View>
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -108,8 +100,10 @@ const App = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
     backgroundColor: "#fff",
+  },
+  scrollContent: {
+    padding: 16,
   },
   title: {
     fontSize: 22,
@@ -132,7 +126,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     marginBottom: 16,
-    width: "100%",
   },
   buttonText: {
     color: "#fff",
@@ -151,6 +144,22 @@ const styles = StyleSheet.create({
   movieTitle: {
     fontSize: 24,
     fontWeight: "600",
+    textAlign: "center",
+  },
+  movieDetails: {
+    fontSize: 18,
+    marginVertical: 4,
+    textAlign: "center",
+  },
+  sectionTitle: {
+    fontSize: 20,
+    marginTop: 16,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  ratingText: {
+    fontSize: 16,
+    marginTop: 4,
     textAlign: "center",
   },
 });
